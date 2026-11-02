@@ -9,7 +9,7 @@
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Styling voor verticale kolomstroom op het beamer-scorebord */
+    /* Styling voor verticale kolomstroom op het scorebord */
     .vertical-columns {
       column-count: 1;
       column-gap: 1.5rem;
@@ -27,200 +27,210 @@
     }
   </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
 
-  <!-- Navigatiebalk -->
-  <header class="bg-teal-700 text-white shadow-md">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <i class="fa-solid fa-trophy text-amber-300 text-2xl"></i>
-        <h1 class="text-xl font-bold tracking-wide" id="quiz-title">Quiz Scorebord</h1>
-      </div>
-      <div class="flex items-center space-x-2 bg-teal-800 p-1 rounded-lg">
-        <button id="nav-front" onclick="switchTab('front')" class="px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-teal-800 shadow">
-          <i class="fa-solid fa-desktop mr-1.5"></i>Scorebord (Beamer)
-        </button>
-        <button id="nav-back" onclick="switchTab('back')" class="px-4 py-1.5 rounded-md font-medium text-sm transition text-teal-100 hover:text-white">
-          <i class="fa-solid fa-sliders mr-1.5"></i>Beheerder
-        </button>
-      </div>
-    </div>
-  </header>
-
-  <!-- Statusbalk cloudverbinding -->
-  <div id="cloud-status" class="bg-emerald-500 text-white text-xs py-1 px-4 text-center font-medium shadow-inner flex justify-center items-center space-x-2">
-    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
-    <span>Live verbonden met Firebase Cloud (`scorebord-db988`)</span>
-  </div>
-
-  <!-- HOOFDINHOUD -->
-  <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
-
-    <!-- FRONT-END: LIVE SCOREBORD -->
-    <section id="tab-front" class="space-y-6">
-      
-      <!-- Filterbalk klassementskeuze -->
-      <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex items-center space-x-2">
-          <span class="text-sm font-semibold text-slate-600">Klassement:</span>
-          <div class="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-50">
-            <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1 rounded-md text-xs font-semibold bg-teal-600 text-white">Alle Ploegen</button>
-            <button onclick="setFilter('regular')" id="filter-regular" class="px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-teal-600">Algemeen</button>
-            <button onclick="setFilter('students')" id="filter-students" class="px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-teal-600 flex items-center gap-1">
-              🎓 Leerlingenklassement
-            </button>
-          </div>
+  <div>
+    <!-- Navigatiebalk -->
+    <header class="bg-teal-700 text-white shadow-md">
+      <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="flex items-center space-x-3">
+          <i class="fa-solid fa-trophy text-amber-300 text-2xl"></i>
+          <h1 class="text-xl font-bold tracking-wide" id="quiz-title">Quiz Scorebord</h1>
         </div>
-        <div id="active-quiz-name" class="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
-          Quiz 2026
+        <div class="flex items-center space-x-2 bg-teal-800 p-1 rounded-lg">
+          <button id="nav-front" onclick="switchTab('front')" class="px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-teal-800 shadow">
+            <i class="fa-solid fa-desktop mr-1.5"></i>Scorebord
+          </button>
+          <button id="nav-back" onclick="switchTab('back')" class="px-4 py-1.5 rounded-md font-medium text-sm transition text-teal-100 hover:text-white">
+            <i class="fa-solid fa-sliders mr-1.5"></i>Beheerder
+          </button>
         </div>
       </div>
+    </header>
 
-      <!-- Container voor 3-koloms rangschikking -->
-      <div id="scoreboard-container" class="vertical-columns">
-        <!-- De ploegen worden hier dynamisch ingeladen -->
-      </div>
-    </section>
+    <!-- HOOFDINHOUD -->
+    <main class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
 
-    <!-- BACK-END: BEHEERDERSDASHBOARD -->
-    <section id="tab-back" class="hidden space-y-8">
-      
-      <!-- Subnavigatie Beheer -->
-      <div class="flex border-b border-slate-200 space-x-4">
-        <button onclick="switchAdminSubtab('scores')" id="subnav-scores" class="pb-3 border-b-2 border-teal-600 text-teal-700 font-bold text-sm">
-          <i class="fa-solid fa-pen-to-square mr-1.5"></i>Scores Ingeven
-        </button>
-        <button onclick="switchAdminSubtab('teams')" id="subnav-teams" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm">
-          <i class="fa-solid fa-users mr-1.5"></i>Ploegen Beheren
-        </button>
-        <button onclick="switchAdminSubtab('rounds')" id="subnav-rounds" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm">
-          <i class="fa-solid fa-list-ol mr-1.5"></i>Rondes & Quizzen
-        </button>
-      </div>
-
-      <!-- BEHEER: SCORES INGEVEN -->
-      <div id="subtab-scores" class="space-y-6">
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
-          <div>
-            <h2 class="text-lg font-bold text-slate-800">Score-invoer</h2>
-            <p class="text-xs text-slate-500">Gebruik <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700">Enter</kbd> of <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700">Pijltje Omlaag</kbd> om snel naar de volgende ploeg te gaan.</p>
+      <!-- FRONT-END: LIVE SCOREBORD -->
+      <section id="tab-front" class="space-y-6">
+        
+        <!-- Filterbalk & Voortgangslegende -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+          <div class="flex items-center space-x-2">
+            <span class="text-sm font-semibold text-slate-600">Klassement:</span>
+            <div class="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-50">
+              <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1 rounded-md text-xs font-semibold bg-teal-600 text-white">Alle Ploegen</button>
+              <button onclick="setFilter('regular')" id="filter-regular" class="px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-teal-600">Algemeen</button>
+              <button onclick="setFilter('students')" id="filter-students" class="px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-teal-600 flex items-center gap-1">
+                🎓 Leerlingenklassement
+              </button>
+            </div>
           </div>
-          <div class="flex items-center space-x-3">
-            <label class="text-sm font-semibold text-slate-700">Kies Ronde:</label>
-            <select id="score-round-select" onchange="renderScoreInputs()" class="bg-slate-50 border border-slate-300 text-slate-800 rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-teal-500">
-              <!-- Dynamische opties -->
-            </select>
+
+          <!-- Subtiele ronde- en scorelegende -->
+          <div id="scoreboard-progress-legend" class="flex items-center space-x-4 text-xs font-medium text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
+            <!-- Dynamisch ingevuld -->
           </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <table class="w-full text-left border-collapse">
-            <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
-              <tr>
-                <th class="p-3 w-16 text-center">Tafel</th>
-                <th class="p-3">Ploegnaam</th>
-                <th class="p-3 w-28 text-center">Categorie</th>
-                <th class="p-3 w-36 text-center">Score (Max <span id="max-score-display">10</span>)</th>
-              </tr>
-            </thead>
-            <tbody id="score-input-table" class="divide-y divide-slate-100 text-sm">
-              <!-- Dynamische invoerrijen -->
-            </tbody>
-          </table>
+        <!-- Container voor 3-koloms rangschikking -->
+        <div id="scoreboard-container" class="vertical-columns">
+          <!-- De ploegen worden hier dynamisch ingeladen -->
         </div>
-      </div>
+      </section>
 
-      <!-- BEHEER: PLOEGEN -->
-      <div id="subtab-teams" class="hidden space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          <!-- Enkelvoudige invoer -->
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-            <h3 class="font-bold text-slate-800 border-b pb-2">Ploeg Toevoegen</h3>
+      <!-- BACK-END: BEHEERDERSDASHBOARD -->
+      <section id="tab-back" class="hidden space-y-8">
+        
+        <!-- Subnavigatie Beheer -->
+        <div class="flex border-b border-slate-200 space-x-4">
+          <button onclick="switchAdminSubtab('scores')" id="subnav-scores" class="pb-3 border-b-2 border-teal-600 text-teal-700 font-bold text-sm">
+            <i class="fa-solid fa-pen-to-square mr-1.5"></i>Scores Ingeven
+          </button>
+          <button onclick="switchAdminSubtab('teams')" id="subnav-teams" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm">
+            <i class="fa-solid fa-users mr-1.5"></i>Ploegen Beheren
+          </button>
+          <button onclick="switchAdminSubtab('rounds')" id="subnav-rounds" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm">
+            <i class="fa-solid fa-list-ol mr-1.5"></i>Rondes & Quizzen
+          </button>
+        </div>
+
+        <!-- BEHEER: SCORES INGEVEN -->
+        <div id="subtab-scores" class="space-y-6">
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Tafelnummer</label>
-              <input type="number" id="team-table-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" placeholder="bijv. 1">
+              <h2 class="text-lg font-bold text-slate-800">Score-invoer</h2>
+              <p class="text-xs text-slate-500">Gebruik <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700">Enter</kbd> of <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700">Pijltje Omlaag</kbd> om snel naar de volgende ploeg te gaan.</p>
             </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Ploegnaam</label>
-              <input type="text" id="team-name-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" placeholder="bijv. De Quizmasters">
-            </div>
-            <div class="flex items-center space-x-2">
-              <input type="checkbox" id="team-student-input" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4">
-              <label for="team-student-input" class="text-xs font-semibold text-teal-800">🎓 Leerlingenploeg?</label>
-            </div>
-            <button onclick="addSingleTeam()" class="w-full bg-teal-600 text-white font-semibold py-2 rounded-lg text-sm hover:bg-teal-700 transition">Toevoegen</button>
-          </div>
-
-          <!-- Bulk import -->
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4 md:col-span-2">
-            <h3 class="font-bold text-slate-800 border-b pb-2">Ploegen Bulk Importeren</h3>
-            <p class="text-xs text-slate-500">Plak per regel één ploegnaam. Voeg Optioneel <code class="bg-slate-100 px-1 py-0.5 rounded text-teal-700 font-bold">(L)</code> of <code class="bg-slate-100 px-1 py-0.5 rounded text-teal-700 font-bold">[L]</code> toe voor een leerlingenploeg.</p>
-            <textarea id="bulk-team-input" rows="4" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="1. De Slimme Köppen&#10;2. De Quizzeria (L)&#10;3. Brainiacs"></textarea>
-            <button onclick="importBulkTeams()" class="bg-slate-800 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-slate-900 transition">Lijst Importeren</button>
-          </div>
-        </div>
-
-        <!-- Ploegenlijst -->
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-            <h3 class="font-bold text-slate-800">Geregistreerde Ploegen (<span id="team-count">0</span>)</h3>
-            <button onclick="clearAllTeams()" class="text-xs text-red-600 hover:underline">Alle ploegen wissen</button>
-          </div>
-          <table class="w-full text-left border-collapse">
-            <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
-              <tr>
-                <th class="p-3 w-16 text-center">Tafel</th>
-                <th class="p-3">Ploegnaam</th>
-                <th class="p-3 w-36">Type</th>
-                <th class="p-3 w-20 text-center">Actie</th>
-              </tr>
-            </thead>
-            <tbody id="team-list-table" class="divide-y divide-slate-100 text-sm">
-              <!-- Dynamische lijst -->
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- BEHEER: RONDES & QUIZZEN -->
-      <div id="subtab-rounds" class="hidden space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          <!-- Rondes beheren -->
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-            <h3 class="font-bold text-slate-800 border-b pb-2">Rondes van Actieve Quiz</h3>
-            <div class="flex space-x-2">
-              <input type="text" id="round-name-input" placeholder="Rondenaam (bijv. Ronde 1: Aardrijkskunde)" class="flex-grow bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
-              <input type="number" id="round-max-input" placeholder="Max Score" class="w-24 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" value="10">
-              <button onclick="addRound()" class="bg-teal-600 text-white font-semibold px-3 py-2 rounded-lg text-sm hover:bg-teal-700">Add</button>
-            </div>
-            <ul id="rounds-list" class="divide-y divide-slate-100 text-sm">
-              <!-- Dynamische rondelijst -->
-            </ul>
-          </div>
-
-          <!-- Quiz Editie Beheer -->
-          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
-            <h3 class="font-bold text-slate-800 border-b pb-2">Quiz Edities</h3>
-            <div class="flex space-x-2">
-              <input type="text" id="new-quiz-title-input" placeholder="Nieuwe Quiz Naam" class="flex-grow bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
-              <button onclick="createNewQuiz()" class="bg-slate-800 text-white font-semibold px-3 py-2 rounded-lg text-sm hover:bg-slate-900">Aanmaken</button>
-            </div>
-            <div class="space-y-2">
-              <label class="text-xs font-semibold text-slate-600">Actieve Quiz Selecteren:</label>
-              <select id="active-quiz-select" onchange="switchActiveQuiz(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
-                <!-- Dynamische quizopties -->
+            <div class="flex items-center space-x-3">
+              <label class="text-sm font-semibold text-slate-700">Kies Ronde:</label>
+              <select id="score-round-select" onchange="renderScoreInputs()" class="bg-slate-50 border border-slate-300 text-slate-800 rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-teal-500">
+                <!-- Dynamische opties -->
               </select>
             </div>
           </div>
 
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
+                <tr>
+                  <th class="p-3 w-16 text-center">Tafel</th>
+                  <th class="p-3">Ploegnaam</th>
+                  <th class="p-3 w-28 text-center">Categorie</th>
+                  <th class="p-3 w-36 text-center">Score (Max <span id="max-score-display">10</span>)</th>
+                </tr>
+              </thead>
+              <tbody id="score-input-table" class="divide-y divide-slate-100 text-sm">
+                <!-- Dynamische invoerrijen -->
+              </tbody>
+            </table>
+          </div>
         </div>
-      </div>
 
-    </section>
+        <!-- BEHEER: PLOEGEN -->
+        <div id="subtab-teams" class="hidden space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            
+            <!-- Enkelvoudige invoer -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="font-bold text-slate-800 border-b pb-2">Ploeg Toevoegen</h3>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Tafelnummer</label>
+                <input type="number" id="team-table-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" placeholder="bijv. 1">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">Ploegnaam</label>
+                <input type="text" id="team-name-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" placeholder="bijv. De Quizmasters">
+              </div>
+              <div class="flex items-center space-x-2">
+                <input type="checkbox" id="team-student-input" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4">
+                <label for="team-student-input" class="text-xs font-semibold text-teal-800">🎓 Leerlingenploeg?</label>
+              </div>
+              <button onclick="addSingleTeam()" class="w-full bg-teal-600 text-white font-semibold py-2 rounded-lg text-sm hover:bg-teal-700 transition">Toevoegen</button>
+            </div>
 
-  </main>
+            <!-- Bulk import -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4 md:col-span-2">
+              <h3 class="font-bold text-slate-800 border-b pb-2">Ploegen Bulk Importeren</h3>
+              <p class="text-xs text-slate-500">Plak per regel één ploegnaam. Voeg Optioneel <code class="bg-slate-100 px-1 py-0.5 rounded text-teal-700 font-bold">(L)</code> of <code class="bg-slate-100 px-1 py-0.5 rounded text-teal-700 font-bold">[L]</code> toe voor een leerlingenploeg.</p>
+              <textarea id="bulk-team-input" rows="4" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="1. De Slimme Köppen&#10;2. De Quizzeria (L)&#10;3. Brainiacs"></textarea>
+              <button onclick="importBulkTeams()" class="bg-slate-800 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-slate-900 transition">Lijst Importeren</button>
+            </div>
+          </div>
+
+          <!-- Ploegenlijst -->
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+              <h3 class="font-bold text-slate-800">Geregistreerde Ploegen (<span id="team-count">0</span>)</h3>
+              <button onclick="clearAllTeams()" class="text-xs text-red-600 hover:underline">Alle ploegen wissen</button>
+            </div>
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+                <tr>
+                  <th class="p-3 w-16 text-center">Tafel</th>
+                  <th class="p-3">Ploegnaam</th>
+                  <th class="p-3 w-36">Type</th>
+                  <th class="p-3 w-20 text-center">Actie</th>
+                </tr>
+              </thead>
+              <tbody id="team-list-table" class="divide-y divide-slate-100 text-sm">
+                <!-- Dynamische lijst -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BEHEER: RONDES & QUIZZEN -->
+        <div id="subtab-rounds" class="hidden space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            
+            <!-- Rondes beheren -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="font-bold text-slate-800 border-b pb-2">Rondes van Actieve Quiz</h3>
+              <div class="flex space-x-2">
+                <input type="text" id="round-name-input" placeholder="Rondenaam (bijv. Ronde 1)" class="flex-grow bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                <input type="number" id="round-max-input" placeholder="Max Score" class="w-24 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" value="10">
+                <button onclick="addRound()" class="bg-teal-600 text-white font-semibold px-3 py-2 rounded-lg text-sm hover:bg-teal-700">Add</button>
+              </div>
+              <ul id="rounds-list" class="divide-y divide-slate-100 text-sm">
+                <!-- Dynamische rondelijst -->
+              </ul>
+            </div>
+
+            <!-- Quiz Editie Beheer -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="font-bold text-slate-800 border-b pb-2">Quiz Edities & Verwijderen</h3>
+              <div class="space-y-3">
+                <div class="flex space-x-2">
+                  <input type="text" id="new-quiz-title-input" placeholder="Nieuwe Quiz Naam" class="flex-grow bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                  <button onclick="createNewQuiz()" class="bg-slate-800 text-white font-semibold px-3 py-2 rounded-lg text-sm hover:bg-slate-900">Aanmaken</button>
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs font-semibold text-slate-600">Actieve Quiz Selecteren:</label>
+                  <select id="active-quiz-select" onchange="switchActiveQuiz(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                    <!-- Dynamische quizopties -->
+                  </select>
+                </div>
+                <div class="pt-2 border-t border-slate-100 flex justify-end">
+                  <button onclick="deleteCurrentQuiz()" class="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-trash-can"></i> Huidige quiz verwijderen
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Uiterst subtiel, tekstloos verbindingsindicatortje (rechtsonder in de hoek) -->
+  <footer class="max-w-7xl mx-auto w-full p-4 flex justify-end">
+    <div title="Verbonden" class="w-2 h-2 rounded-full bg-emerald-500 opacity-60"></div>
+  </footer>
 
   <!-- FIREBASE SDK INCLUDES -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -229,7 +239,6 @@
 
   <!-- APPLICATIE LOGICA -->
   <script>
-    // 1. JOUW SPECIFIEKE FIREBASE CONFIGURATIE
     const firebaseConfig = {
       apiKey: "AIzaSyDYF6510buRiYfKqczdgR-InB2QP4NLN3k",
       authDomain: "scorebord-db988.firebaseapp.com",
@@ -240,11 +249,9 @@
       measurementId: "G-W7WVNQM8CV"
     };
 
-    // Firebase Initialiseren
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Standaard Quiz Data Structuur
     let defaultState = {
       activeQuizId: "default",
       quizzes: {
@@ -267,7 +274,6 @@
     let appState = defaultState;
     let currentFilter = 'all';
 
-    // Real-time Cloud Synchronisatie starten
     function initSync() {
       firebase.auth().signInAnonymously().catch(console.error);
 
@@ -275,7 +281,6 @@
         if (doc.exists) {
           appState = doc.data();
         } else {
-          // Eerste keer opslaan indien nog geen data aanwezig is
           db.collection('quizData').doc('mainState').set(defaultState);
         }
         renderAll();
@@ -293,7 +298,6 @@
       return appState.quizzes[appState.activeQuizId] || Object.values(appState.quizzes)[0];
     }
 
-    // Navigatie & Filters
     function switchTab(tab) {
       document.getElementById('tab-front').classList.toggle('hidden', tab !== 'front');
       document.getElementById('tab-back').classList.toggle('hidden', tab !== 'back');
@@ -332,11 +336,9 @@
       renderFrontScoreboard();
     }
 
-    // Render functies
     function renderAll() {
       const quiz = getActiveQuiz();
       document.getElementById('quiz-title').innerText = quiz.title;
-      document.getElementById('active-quiz-name').innerText = quiz.title;
 
       renderFrontScoreboard();
       renderScoreInputs();
@@ -348,18 +350,34 @@
     function renderFrontScoreboard() {
       const quiz = getActiveQuiz();
       const container = document.getElementById('scoreboard-container');
+      const legendContainer = document.getElementById('scoreboard-progress-legend');
       container.innerHTML = '';
 
-      // Totaalscores berekenen
+      // Bereken hoeveel rondes al punten hebben (waar minstens één ploeg een score heeft ingevuld) en de maxscore tot dan toe
+      let roundsWithScoresCount = 0;
+      let maxScoreSoFar = 0;
+
+      quiz.rounds.forEach(round => {
+        let hasScoreInRound = quiz.teams.some(team => team.scores && team.scores[round.id] !== undefined && team.scores[round.id] !== '');
+        if (hasScoreInRound) {
+          roundsWithScoresCount++;
+          maxScoreSoFar += (round.maxScore || 0);
+        }
+      });
+
+      legendContainer.innerHTML = `
+        <div>Ingevoerde rondes: <strong class="text-teal-800">${roundsWithScoresCount}</strong> / ${quiz.rounds.length}</div>
+        <div class="text-slate-300">|</div>
+        <div>Max. score tot nu toe: <strong class="text-teal-800">${maxScoreSoFar} pt</strong></div>
+      `;
+
       let teamsWithScores = quiz.teams.map(team => {
         const total = Object.values(team.scores || {}).reduce((a, b) => a + Number(b), 0);
         return { ...team, totalScore: total };
       });
 
-      // Sorteren op Totaalscore (descending), daarna Tafelnummer
       teamsWithScores.sort((a, b) => b.totalScore - a.totalScore || a.table - b.table);
 
-      // Filteren op categorie
       let filteredTeams = teamsWithScores.filter(team => {
         if (currentFilter === 'regular') return !team.isStudent;
         if (currentFilter === 'students') return team.isStudent;
@@ -416,7 +434,6 @@
 
       if (!round) return;
 
-      // Sorteren op tafelnummer voor overzichtelijke invoer
       const sortedTeams = [...quiz.teams].sort((a, b) => a.table - b.table);
 
       sortedTeams.forEach((team, index) => {
@@ -446,7 +463,6 @@
       });
     }
 
-    // Pijltjestoetsen / Enter navigatie bij score-invoer
     function handleScoreKey(e, index) {
       if (e.key === 'Enter' || e.key === 'ArrowDown') {
         e.preventDefault();
@@ -528,13 +544,11 @@
         let isStudent = false;
         let cleanName = line.trim();
 
-        // Controleren op (L) of [L]
         if (/\(L\)|\[L\]/i.test(cleanName)) {
           isStudent = true;
           cleanName = cleanName.replace(/\(L\)|\[L\]/gi, '').trim();
         }
 
-        // Eventueel vooraan het nummer (bijv. "1. Naam") afstrippen
         const match = cleanName.match(/^(\d+)[\.\s\-]+(.+)/);
         let tableNum = quiz.teams.length + 1;
         if (match) {
@@ -639,12 +653,25 @@
       saveState();
     }
 
+    function deleteCurrentQuiz() {
+      const quizIds = Object.keys(appState.quizzes);
+      if (quizIds.length <= 1) {
+        return alert("Je kunt de laatste overgebleven quiz niet verwijderen.");
+      }
+
+      const currentQuiz = getActiveQuiz();
+      if (confirm(`Weet je zeker dat je de quiz "${currentQuiz.title}" volledig wilt verwijderen?`)) {
+        delete appState.quizzes[appState.activeQuizId];
+        appState.activeQuizId = Object.keys(appState.quizzes)[0];
+        saveState();
+      }
+    }
+
     function switchActiveQuiz(id) {
       appState.activeQuizId = id;
       saveState();
     }
 
-    // Opstarten
     window.addEventListener('DOMContentLoaded', () => {
       initSync();
     });
