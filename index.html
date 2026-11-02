@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Scorebord</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Styling voor verticale kolomstroom op het beamer-scorebord */
+    .vertical-columns {
+      column-count: 1;
+      column-gap: 1.5rem;
+    }
+    @media (min-width: 768px) {
+      .vertical-columns { column-count: 2; }
+    }
+    @media (min-width: 1280px) {
+      .vertical-columns { column-count: 3; }
+    }
+    .score-card {
+      break-inside: avoid;
+      page-break-inside: avoid;
+      margin-bottom: 0.75rem;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Navigatiebalk -->
+  <header class="bg-teal-700 text-white shadow-md">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-3">
+        <i class="fa-solid fa-trophy text-amber-300 text-2xl"></i>
+        <h1 class="text-xl font-bold tracking-wide" id="quiz-title">Quiz Scorebord</h1>
+      </div>
+      <div class="flex items-center space-x-2 bg-teal-800 p-1 rounded-lg">
+        <button id="nav-front" onclick="switchTab('front')" class="px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-teal-800 shadow">
+          <i class="fa-solid fa-desktop mr-1.5"></i>Scorebord (Beamer)
+        </button>
+        <button id="nav-back" onclick="switchTab('back')" class="px-4 py-1.5 rounded-md font-medium text-sm transition text-teal-100 hover:text-white">
+          <i class="fa-solid fa-sliders mr-1.5"></i>Beheerder
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Statusbalk cloudverbinding -->
+  <div id="cloud-status" class="bg-emerald-500 text-white text-xs py-1 px-4 text-center font-medium shadow-inner flex justify-center items-center space-x-2">
+    <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+    <span>Live verbonden met Firebase Cloud (`scorebord-db988`)</span>
+  </div>
+
+  <!-- HOOFDINHOUD -->
+  <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
+
+    <!-- FRONT-END: LIVE SCOREBORD -->
+    <section id="tab-front" class="space-y-6">
+      
+      <!-- Filterbalk klassementskeuze -->
+      <div class="flex flex-wrap justify-between items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex items-center space-x-2">
+          <span class="text-sm font-semibold text-slate-600">Klassement:</span>
+          <div class="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-50">
+            <button onclick="setFilter('all')" id="filter-all" class="px-3 py-1 rounded-md text-xs font-semibold bg-teal-600 text-white">Alle Ploegen</button>
+            <button onclick="setFilter('regular')" id="filter-regular" class="px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-teal-600">Algemeen</button>
+            <button onclick="setFilter('students')" id="filter-students" class="px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-teal-600 flex items-center gap-1">
+              🎓 Leerlingenklassement
+            </button>
+          </div>
+        </div>
+        <div id="active-quiz-name" class="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+          Quiz 2026
+        </div>
+      </div>
+
+      <!-- Container voor 3-koloms rangschikking -->
+      <div id="scoreboard-container" class="vertical-columns">
+        <!-- De ploegen worden hier dynamisch ingeladen -->
+      </div>
+    </section>
+
+    <!-- BACK-END: BEHEERDERSDASHBOARD -->
+    <section id="tab-back" class="hidden space-y-8">
+      
+      <!-- Subnavigatie Beheer -->
+      <div class="flex border-b border-slate-200 space-x-4">
+        <button onclick="switchAdminSubtab('scores')" id="subnav-scores" class="pb-3 border-b-2 border-teal-600 text-teal-700 font-bold text-sm">
+          <i class="fa-solid fa-pen-to-square mr-1.5"></i>Scores Ingeven
+        </button>
+        <button onclick="switchAdminSubtab('teams')" id="subnav-teams" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm">
+          <i class="fa-solid fa-users mr-1.5"></i>Ploegen Beheren
+        </button>
+        <button onclick="switchAdminSubtab('rounds')" id="subnav-rounds" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm">
+          <i class="fa-solid fa-list-ol mr-1.5"></i>Rondes & Quizzen
+        </button>
+      </div>
+
+      <!-- BEHEER: SCORES INGEVEN -->
+      <div id="subtab-scores" class="space-y-6">
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800">Score-invoer</h2>
+            <p class="text-xs text-slate-500">Gebruik <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700">Enter</kbd> of <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-300 rounded text-slate-700">Pijltje Omlaag</kbd> om snel naar de volgende ploeg te gaan.</p>
+          </div>
+          <div class="flex items-center space-x-3">
+            <label class="text-sm font-semibold text-slate-700">Kies Ronde:</label>
+            <select id="score-round-select" onchange="renderScoreInputs()" class="bg-slate-50 border border-slate-300 text-slate-800 rounded-lg px-3 py-1.5 text-sm font-medium focus:ring-2 focus:ring-teal-500">
+              <!-- Dynamische opties -->
+            </select>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wider">
+              <tr>
+                <th class="p-3 w-16 text-center">Tafel</th>
+                <th class="p-3">Ploegnaam</th>
+                <th class="p-3 w-28 text-center">Categorie</th>
+                <th class="p-3 w-36 text-center">Score (Max <span id="max-score-display">10</span>)</th>
+              </tr>
+            </thead>
+            <tbody id="score-input-table" class="divide-y divide-slate-100 text-sm">
+              <!-- Dynamische invoerrijen -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BEHEER: PLOEGEN -->
+      <div id="subtab-teams" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <!-- Enkelvoudige invoer -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-800 border-b pb-2">Ploeg Toevoegen</h3>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tafelnummer</label>
+              <input type="number" id="team-table-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" placeholder="bijv. 1">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Ploegnaam</label>
+              <input type="text" id="team-name-input" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" placeholder="bijv. De Quizmasters">
+            </div>
+            <div class="flex items-center space-x-2">
+              <input type="checkbox" id="team-student-input" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500 h-4 w-4">
+              <label for="team-student-input" class="text-xs font-semibold text-teal-800">🎓 Leerlingenploeg?</label>
+            </div>
+            <button onclick="addSingleTeam()" class="w-full bg-teal-600 text-white font-semibold py-2 rounded-lg text-sm hover:bg-teal-700 transition">Toevoegen</button>
+          </div>
+
+          <!-- Bulk import -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4 md:col-span-2">
+            <h3 class="font-bold text-slate-800 border-b pb-2">Ploegen Bulk Importeren</h3>
+            <p class="text-xs text-slate-500">Plak per regel één ploegnaam. Voeg Optioneel <code class="bg-slate-100 px-1 py-0.5 rounded text-teal-700 font-bold">(L)</code> of <code class="bg-slate-100 px-1 py-0.5 rounded text-teal-700 font-bold">[L]</code> toe voor een leerlingenploeg.</p>
+            <textarea id="bulk-team-input" rows="4" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono" placeholder="1. De Slimme Köppen&#10;2. De Quizzeria (L)&#10;3. Brainiacs"></textarea>
+            <button onclick="importBulkTeams()" class="bg-slate-800 text-white font-semibold px-4 py-2 rounded-lg text-sm hover:bg-slate-900 transition">Lijst Importeren</button>
+          </div>
+        </div>
+
+        <!-- Ploegenlijst -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800">Geregistreerde Ploegen (<span id="team-count">0</span>)</h3>
+            <button onclick="clearAllTeams()" class="text-xs text-red-600 hover:underline">Alle ploegen wissen</button>
+          </div>
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-slate-50 border-b border-slate-200 text-xs text-slate-500 uppercase">
+              <tr>
+                <th class="p-3 w-16 text-center">Tafel</th>
+                <th class="p-3">Ploegnaam</th>
+                <th class="p-3 w-36">Type</th>
+                <th class="p-3 w-20 text-center">Actie</th>
+              </tr>
+            </thead>
+            <tbody id="team-list-table" class="divide-y divide-slate-100 text-sm">
+              <!-- Dynamische lijst -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- BEHEER: RONDES & QUIZZEN -->
+      <div id="subtab-rounds" class="hidden space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Rondes beheren -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-800 border-b pb-2">Rondes van Actieve Quiz</h3>
+            <div class="flex space-x-2">
+              <input type="text" id="round-name-input" placeholder="Rondenaam (bijv. Ronde 1: Aardrijkskunde)" class="flex-grow bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+              <input type="number" id="round-max-input" placeholder="Max Score" class="w-24 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm" value="10">
+              <button onclick="addRound()" class="bg-teal-600 text-white font-semibold px-3 py-2 rounded-lg text-sm hover:bg-teal-700">Add</button>
+            </div>
+            <ul id="rounds-list" class="divide-y divide-slate-100 text-sm">
+              <!-- Dynamische rondelijst -->
+            </ul>
+          </div>
+
+          <!-- Quiz Editie Beheer -->
+          <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-800 border-b pb-2">Quiz Edities</h3>
+            <div class="flex space-x-2">
+              <input type="text" id="new-quiz-title-input" placeholder="Nieuwe Quiz Naam" class="flex-grow bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+              <button onclick="createNewQuiz()" class="bg-slate-800 text-white font-semibold px-3 py-2 rounded-lg text-sm hover:bg-slate-900">Aanmaken</button>
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-semibold text-slate-600">Actieve Quiz Selecteren:</label>
+              <select id="active-quiz-select" onchange="switchActiveQuiz(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+                <!-- Dynamische quizopties -->
+              </select>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- FIREBASE SDK INCLUDES -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <!-- APPLICATIE LOGICA -->
+  <script>
+    // 1. JOUW SPECIFIEKE FIREBASE CONFIGURATIE
+    const firebaseConfig = {
+      apiKey: "AIzaSyDYF6510buRiYfKqczdgR-InB2QP4NLN3k",
+      authDomain: "scorebord-db988.firebaseapp.com",
+      projectId: "scorebord-db988",
+      storageBucket: "scorebord-db988.firebasestorage.app",
+      messagingSenderId: "303083103350",
+      appId: "1:303083103350:web:8dc55851370910722b2b57",
+      measurementId: "G-W7WVNQM8CV"
+    };
+
+    // Firebase Initialiseren
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Standaard Quiz Data Structuur
+    let defaultState = {
+      activeQuizId: "default",
+      quizzes: {
+        "default": {
+          id: "default",
+          title: "Grote Quiz 2026",
+          rounds: [
+            { id: "r1", name: "Ronde 1: Opwarmer", maxScore: 10 },
+            { id: "r2", name: "Ronde 2: Geschiedenis & Trivia", maxScore: 10 }
+          ],
+          teams: [
+            { id: "t1", table: 1, name: "De Breinbrekers", isStudent: false, scores: { r1: 8, r2: 9 } },
+            { id: "t2", table: 2, name: "De Jonge Genieën", isStudent: true, scores: { r1: 9, r2: 7 } },
+            { id: "t3", table: 3, name: "De Slimste Mensen", isStudent: false, scores: { r1: 6, r2: 8 } }
+          ]
+        }
+      }
+    };
+
+    let appState = defaultState;
+    let currentFilter = 'all';
+
+    // Real-time Cloud Synchronisatie starten
+    function initSync() {
+      firebase.auth().signInAnonymously().catch(console.error);
+
+      db.collection('quizData').doc('mainState').onSnapshot(doc => {
+        if (doc.exists) {
+          appState = doc.data();
+        } else {
+          // Eerste keer opslaan indien nog geen data aanwezig is
+          db.collection('quizData').doc('mainState').set(defaultState);
+        }
+        renderAll();
+      }, err => {
+        console.error("Firestore sync error:", err);
+      });
+    }
+
+    function saveState() {
+      renderAll();
+      db.collection('quizData').doc('mainState').set(appState);
+    }
+
+    function getActiveQuiz() {
+      return appState.quizzes[appState.activeQuizId] || Object.values(appState.quizzes)[0];
+    }
+
+    // Navigatie & Filters
+    function switchTab(tab) {
+      document.getElementById('tab-front').classList.toggle('hidden', tab !== 'front');
+      document.getElementById('tab-back').classList.toggle('hidden', tab !== 'back');
+      
+      document.getElementById('nav-front').className = tab === 'front' 
+        ? "px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-teal-800 shadow"
+        : "px-4 py-1.5 rounded-md font-medium text-sm transition text-teal-100 hover:text-white";
+      
+      document.getElementById('nav-back').className = tab === 'back' 
+        ? "px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-teal-800 shadow"
+        : "px-4 py-1.5 rounded-md font-medium text-sm transition text-teal-100 hover:text-white";
+    }
+
+    function switchAdminSubtab(sub) {
+      ['scores', 'teams', 'rounds'].forEach(s => {
+        document.getElementById(`subtab-${s}`).classList.toggle('hidden', s !== sub);
+        const btn = document.getElementById(`subnav-${s}`);
+        if (s === sub) {
+          btn.className = "pb-3 border-b-2 border-teal-600 text-teal-700 font-bold text-sm";
+        } else {
+          btn.className = "pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700 font-medium text-sm";
+        }
+      });
+    }
+
+    function setFilter(filter) {
+      currentFilter = filter;
+      ['all', 'regular', 'students'].forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        if (f === filter) {
+          btn.className = "px-3 py-1 rounded-md text-xs font-semibold bg-teal-600 text-white";
+        } else {
+          btn.className = "px-3 py-1 rounded-md text-xs font-semibold text-slate-600 hover:text-teal-600";
+        }
+      });
+      renderFrontScoreboard();
+    }
+
+    // Render functies
+    function renderAll() {
+      const quiz = getActiveQuiz();
+      document.getElementById('quiz-title').innerText = quiz.title;
+      document.getElementById('active-quiz-name').innerText = quiz.title;
+
+      renderFrontScoreboard();
+      renderScoreInputs();
+      renderTeamsList();
+      renderRoundsList();
+      renderQuizSelect();
+    }
+
+    function renderFrontScoreboard() {
+      const quiz = getActiveQuiz();
+      const container = document.getElementById('scoreboard-container');
+      container.innerHTML = '';
+
+      // Totaalscores berekenen
+      let teamsWithScores = quiz.teams.map(team => {
+        const total = Object.values(team.scores || {}).reduce((a, b) => a + Number(b), 0);
+        return { ...team, totalScore: total };
+      });
+
+      // Sorteren op Totaalscore (descending), daarna Tafelnummer
+      teamsWithScores.sort((a, b) => b.totalScore - a.totalScore || a.table - b.table);
+
+      // Filteren op categorie
+      let filteredTeams = teamsWithScores.filter(team => {
+        if (currentFilter === 'regular') return !team.isStudent;
+        if (currentFilter === 'students') return team.isStudent;
+        return true;
+      });
+
+      filteredTeams.forEach((team, idx) => {
+        const rank = idx + 1;
+        let rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-slate-200 text-slate-700 text-xs">${rank}</span>`;
+        if (rank === 1) rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-amber-400 text-amber-950 text-xs shadow-sm"><i class="fa-solid fa-crown"></i></span>`;
+        if (rank === 2) rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-slate-300 text-slate-800 text-xs shadow-sm">2</span>`;
+        if (rank === 3) rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-amber-600 text-white text-xs shadow-sm">3</span>`;
+
+        const card = document.createElement('div');
+        card.className = `score-card bg-white rounded-lg p-3 border shadow-sm flex items-center justify-between transition ${
+          team.isStudent ? 'border-teal-400 bg-teal-50/40' : 'border-slate-200'
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center space-x-3 overflow-hidden pr-2">
+            ${rankBadge}
+            <span class="text-xs font-mono font-bold text-slate-400">#${team.table}</span>
+            <span class="font-bold text-sm text-slate-800 truncate">${team.name}</span>
+            ${team.isStudent ? '<span class="text-teal-600 text-xs" title="Leerlingenploeg">🎓</span>' : ''}
+          </div>
+          <div class="text-right flex-shrink-0">
+            <span class="text-lg font-black tracking-tight text-teal-800">${team.totalScore}</span>
+            <span class="text-[10px] text-slate-400 font-medium">pt</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderScoreInputs() {
+      const quiz = getActiveQuiz();
+      const select = document.getElementById('score-round-select');
+      const currentRoundId = select.value || (quiz.rounds[0] ? quiz.rounds[0].id : null);
+
+      select.innerHTML = '';
+      quiz.rounds.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.innerText = r.name;
+        if (r.id === currentRoundId) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      const round = quiz.rounds.find(r => r.id === currentRoundId);
+      document.getElementById('max-score-display').innerText = round ? round.maxScore : '-';
+
+      const tbody = document.getElementById('score-input-table');
+      tbody.innerHTML = '';
+
+      if (!round) return;
+
+      // Sorteren op tafelnummer voor overzichtelijke invoer
+      const sortedTeams = [...quiz.teams].sort((a, b) => a.table - b.table);
+
+      sortedTeams.forEach((team, index) => {
+        const score = (team.scores && team.scores[round.id] !== undefined) ? team.scores[round.id] : '';
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50";
+
+        tr.innerHTML = `
+          <td class="p-3 text-center font-mono font-bold text-slate-500">${team.table}</td>
+          <td class="p-3 font-semibold text-slate-800">${team.name}</td>
+          <td class="p-3 text-center">
+            ${team.isStudent 
+              ? '<span class="inline-flex items-center gap-1 bg-teal-100 text-teal-800 text-[10px] px-2 py-0.5 rounded-full font-bold">🎓 Leerlingen</span>' 
+              : '<span class="text-slate-400 text-xs">Algemeen</span>'}
+          </td>
+          <td class="p-3 text-center">
+            <input type="number" 
+                   step="0.5"
+                   data-index="${index}"
+                   class="score-field w-20 text-center bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-teal-500"
+                   value="${score}"
+                   onchange="updateScore('${team.id}', '${round.id}', this.value)"
+                   onkeydown="handleScoreKey(event, ${index})">
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Pijltjestoetsen / Enter navigatie bij score-invoer
+    function handleScoreKey(e, index) {
+      if (e.key === 'Enter' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextInput = document.querySelector(`.score-field[data-index="${index + 1}"]`);
+        if (nextInput) nextInput.focus();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevInput = document.querySelector(`.score-field[data-index="${index - 1}"]`);
+        if (prevInput) prevInput.focus();
+      }
+    }
+
+    function updateScore(teamId, roundId, scoreVal) {
+      const quiz = getActiveQuiz();
+      const team = quiz.teams.find(t => t.id === teamId);
+      if (team) {
+        if (!team.scores) team.scores = {};
+        if (scoreVal === '') {
+          delete team.scores[roundId];
+        } else {
+          team.scores[roundId] = parseFloat(scoreVal);
+        }
+        saveState();
+      }
+    }
+
+    function renderTeamsList() {
+      const quiz = getActiveQuiz();
+      document.getElementById('team-count').innerText = quiz.teams.length;
+      const tbody = document.getElementById('team-list-table');
+      tbody.innerHTML = '';
+
+      const sorted = [...quiz.teams].sort((a, b) => a.table - b.table);
+
+      sorted.forEach(team => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50";
+        tr.innerHTML = `
+          <td class="p-3 text-center font-mono font-bold text-slate-500">${team.table}</td>
+          <td class="p-3 font-semibold text-slate-800">${team.name}</td>
+          <td class="p-3">${team.isStudent ? '🎓 Leerlingen' : 'Algemeen'}</td>
+          <td class="p-3 text-center">
+            <button onclick="deleteTeam('${team.id}')" class="text-red-500 hover:text-red-700 text-xs font-semibold">Wis</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function addSingleTeam() {
+      const quiz = getActiveQuiz();
+      const table = parseInt(document.getElementById('team-table-input').value);
+      const name = document.getElementById('team-name-input').value.trim();
+      const isStudent = document.getElementById('team-student-input').checked;
+
+      if (!table || !name) return alert("Vul een geldig tafelnummer en naam in.");
+
+      quiz.teams.push({
+        id: 't_' + Date.now(),
+        table: table,
+        name: name,
+        isStudent: isStudent,
+        scores: {}
+      });
+
+      document.getElementById('team-table-input').value = '';
+      document.getElementById('team-name-input').value = '';
+      document.getElementById('team-student-input').checked = false;
+
+      saveState();
+    }
+
+    function importBulkTeams() {
+      const quiz = getActiveQuiz();
+      const text = document.getElementById('bulk-team-input').value;
+      const lines = text.split('\n').filter(l => l.trim().length > 0);
+
+      lines.forEach((line, i) => {
+        let isStudent = false;
+        let cleanName = line.trim();
+
+        // Controleren op (L) of [L]
+        if (/\(L\)|\[L\]/i.test(cleanName)) {
+          isStudent = true;
+          cleanName = cleanName.replace(/\(L\)|\[L\]/gi, '').trim();
+        }
+
+        // Eventueel vooraan het nummer (bijv. "1. Naam") afstrippen
+        const match = cleanName.match(/^(\d+)[\.\s\-]+(.+)/);
+        let tableNum = quiz.teams.length + 1;
+        if (match) {
+          tableNum = parseInt(match[1]);
+          cleanName = match[2].trim();
+        }
+
+        quiz.teams.push({
+          id: 't_' + Date.now() + '_' + i,
+          table: tableNum,
+          name: cleanName,
+          isStudent: isStudent,
+          scores: {}
+        });
+      });
+
+      document.getElementById('bulk-team-input').value = '';
+      saveState();
+    }
+
+    function deleteTeam(id) {
+      const quiz = getActiveQuiz();
+      quiz.teams = quiz.teams.filter(t => t.id !== id);
+      saveState();
+    }
+
+    function clearAllTeams() {
+      if (confirm("Weet je zeker dat je ALLE ploegen en hun scores wilt wissen?")) {
+        const quiz = getActiveQuiz();
+        quiz.teams = [];
+        saveState();
+      }
+    }
+
+    function renderRoundsList() {
+      const quiz = getActiveQuiz();
+      const ul = document.getElementById('rounds-list');
+      ul.innerHTML = '';
+
+      quiz.rounds.forEach(r => {
+        const li = document.createElement('li');
+        li.className = "py-2 flex justify-between items-center";
+        li.innerHTML = `
+          <div>
+            <span class="font-semibold text-slate-800">${r.name}</span>
+            <span class="text-xs text-slate-400 ml-2">(Max: ${r.maxScore} pt)</span>
+          </div>
+          <button onclick="deleteRound('${r.id}')" class="text-red-500 hover:text-red-700 text-xs">Wis</button>
+        `;
+        ul.appendChild(li);
+      });
+    }
+
+    function addRound() {
+      const quiz = getActiveQuiz();
+      const name = document.getElementById('round-name-input').value.trim();
+      const maxScore = parseFloat(document.getElementById('round-max-input').value);
+
+      if (!name || isNaN(maxScore)) return alert("Vul een naam en een geldige maximale score in.");
+
+      quiz.rounds.push({
+        id: 'r_' + Date.now(),
+        name: name,
+        maxScore: maxScore
+      });
+
+      document.getElementById('round-name-input').value = '';
+      saveState();
+    }
+
+    function deleteRound(id) {
+      const quiz = getActiveQuiz();
+      quiz.rounds = quiz.rounds.filter(r => r.id !== id);
+      saveState();
+    }
+
+    function renderQuizSelect() {
+      const select = document.getElementById('active-quiz-select');
+      select.innerHTML = '';
+      Object.values(appState.quizzes).forEach(q => {
+        const opt = document.createElement('option');
+        opt.value = q.id;
+        opt.innerText = q.title;
+        if (q.id === appState.activeQuizId) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function createNewQuiz() {
+      const title = document.getElementById('new-quiz-title-input').value.trim();
+      if (!title) return alert("Vul een titel in voor de nieuwe quiz.");
+
+      const newId = 'q_' + Date.now();
+      appState.quizzes[newId] = {
+        id: newId,
+        title: title,
+        rounds: [],
+        teams: []
+      };
+      appState.activeQuizId = newId;
+      document.getElementById('new-quiz-title-input').value = '';
+      saveState();
+    }
+
+    function switchActiveQuiz(id) {
+      appState.activeQuizId = id;
+      saveState();
+    }
+
+    // Opstarten
+    window.addEventListener('DOMContentLoaded', () => {
+      initSync();
+    });
+  </script>
+</body>
+</html>
