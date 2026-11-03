@@ -3,16 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz Scorebord</title>
+  <title>Scorebord</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* Styling voor verticale kolomstroom op het scorebord */
+    :root {
+      --board-text-scale: 1;
+    }
+
+    /* Verticale kolomstroom op het scorebord */
     .vertical-columns {
       column-count: 1;
-      column-gap: 1.5rem;
+      column-gap: 1rem;
     }
     @media (min-width: 768px) {
       .vertical-columns { column-count: 2; }
@@ -20,12 +24,34 @@
     @media (min-width: 1280px) {
       .vertical-columns { column-count: 3; }
     }
+
     .score-card {
       break-inside: avoid;
       page-break-inside: avoid;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.4rem;
+      padding: calc(0.4rem * var(--board-text-scale)) calc(0.6rem * var(--board-text-scale));
     }
-    /* Clean mode verborgene elementen */
+
+    .card-rank {
+      font-size: calc(0.75rem * var(--board-text-scale));
+      width: calc(1.5rem * var(--board-text-scale));
+      height: calc(1.5rem * var(--board-text-scale));
+    }
+
+    .card-table {
+      font-size: calc(0.75rem * var(--board-text-scale));
+    }
+
+    .card-name {
+      font-size: calc(0.95rem * var(--board-text-scale));
+      line-height: 1.2;
+    }
+
+    .card-score {
+      font-size: calc(1.15rem * var(--board-text-scale));
+    }
+
+    /* Clean mode verborgen elementen */
     body.is-clean-fullscreen header,
     body.is-clean-fullscreen #filter-bar,
     body.is-clean-fullscreen footer {
@@ -33,12 +59,12 @@
     }
     body.is-clean-fullscreen main {
       max-width: 100% !important;
-      padding: 1.5rem !important;
+      padding: 0.75rem !important;
     }
     body.is-clean-fullscreen #fullscreen-btn-container {
       position: fixed;
-      top: 1rem;
-      right: 1rem;
+      top: 0.75rem;
+      right: 0.75rem;
       z-index: 50;
     }
   </style>
@@ -65,20 +91,29 @@
     </header>
 
     <!-- HOOFDINHOUD -->
-    <main class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+    <main class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-4">
 
       <!-- FRONT-END: LIVE SCOREBORD -->
-      <section id="tab-front" class="space-y-6 relative">
+      <section id="tab-front" class="space-y-4 relative">
         
-        <!-- Enkele subtiele fullscreen knop met icoon -->
-        <div id="fullscreen-btn-container" class="flex justify-end">
-          <button onclick="toggleCleanFullscreen()" id="fullscreen-toggle-btn" title="Volledig scherm in-/uitschakelen" class="bg-slate-800/80 hover:bg-slate-900 text-white text-sm p-2.5 rounded-lg shadow backdrop-blur-sm transition flex items-center justify-center w-9 h-9">
-            <i id="fullscreen-icon" class="fa-solid fa-expand"></i>
-          </button>
+        <!-- Bovenbalk met schuifbalk & Fullscreen knop -->
+        <div class="flex flex-wrap justify-between items-center gap-3">
+          <div class="flex items-center space-x-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm text-xs font-semibold text-slate-600">
+            <i class="fa-solid fa-text-height text-slate-400"></i>
+            <span>Tekstgrootte:</span>
+            <input type="range" id="scale-slider" min="0.7" max="1.3" step="0.05" value="1" oninput="adjustTextScale(this.value)" class="w-24 accent-teal-600 cursor-pointer">
+            <span id="scale-val" class="font-mono text-slate-500 w-8">100%</span>
+          </div>
+
+          <div id="fullscreen-btn-container" class="flex justify-end">
+            <button onclick="toggleCleanFullscreen()" id="fullscreen-toggle-btn" title="Volledig scherm in-/uitschakelen" class="bg-slate-800/80 hover:bg-slate-900 text-white text-sm p-2 rounded-lg shadow backdrop-blur-sm transition flex items-center justify-center w-8 h-8">
+              <i id="fullscreen-icon" class="fa-solid fa-expand"></i>
+            </button>
+          </div>
         </div>
 
         <!-- Filterbalk & Voortgangslegende -->
-        <div id="filter-bar" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+        <div id="filter-bar" class="bg-white p-3 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
           <div class="flex items-center space-x-2">
             <span class="text-sm font-semibold text-slate-600">Klassement:</span>
             <div class="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-50">
@@ -91,7 +126,7 @@
           </div>
 
           <!-- Subtiele ronde- en scorelegende -->
-          <div id="scoreboard-progress-legend" class="flex items-center space-x-4 text-xs font-medium text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
+          <div id="scoreboard-progress-legend" class="flex items-center space-x-4 text-xs font-medium text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
             <!-- Dynamisch ingevuld -->
           </div>
         </div>
@@ -297,6 +332,12 @@
     let appState = defaultState;
     let currentFilter = 'all';
 
+    function adjustTextScale(val) {
+      document.documentElement.style.setProperty('--board-text-scale', val);
+      document.getElementById('scale-val').innerText = Math.round(val * 100) + '%';
+      autoFitTeamNames();
+    }
+
     function initSync() {
       firebase.auth().signInAnonymously().catch(console.error);
 
@@ -321,7 +362,6 @@
       return appState.quizzes[appState.activeQuizId] || Object.values(appState.quizzes)[0];
     }
 
-    // Toggle Clean Fullscreen Mode met dynamisch icoon
     function toggleCleanFullscreen() {
       if (!document.fullscreenElement) {
         document.documentElement.requestFullscreen().catch(err => {
@@ -334,7 +374,6 @@
       }
     }
 
-    // Luisteren naar statuswijziging van het scherm
     document.addEventListener('fullscreenchange', () => {
       const body = document.body;
       const icon = document.getElementById('fullscreen-icon');
@@ -346,6 +385,7 @@
         body.classList.remove('is-clean-fullscreen');
         icon.className = 'fa-solid fa-expand';
       }
+      setTimeout(autoFitTeamNames, 100);
     });
 
     function switchTab(tab) {
@@ -435,31 +475,55 @@
 
       filteredTeams.forEach((team, idx) => {
         const rank = idx + 1;
-        let rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-slate-200 text-slate-700 text-xs">${rank}</span>`;
-        if (rank === 1) rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-amber-400 text-amber-950 text-xs shadow-sm"><i class="fa-solid fa-crown"></i></span>`;
-        if (rank === 2) rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-slate-300 text-slate-800 text-xs shadow-sm">2</span>`;
-        if (rank === 3) rankBadge = `<span class="w-7 h-7 flex items-center justify-center font-bold rounded-full bg-amber-600 text-white text-xs shadow-sm">3</span>`;
+        let rankBadge = `<span class="card-rank flex items-center justify-center font-bold rounded-full bg-slate-200 text-slate-700 flex-shrink-0">${rank}</span>`;
+        if (rank === 1) rankBadge = `<span class="card-rank flex items-center justify-center font-bold rounded-full bg-amber-400 text-amber-950 shadow-sm flex-shrink-0"><i class="fa-solid fa-crown"></i></span>`;
+        if (rank === 2) rankBadge = `<span class="card-rank flex items-center justify-center font-bold rounded-full bg-slate-300 text-slate-800 shadow-sm flex-shrink-0">2</span>`;
+        if (rank === 3) rankBadge = `<span class="card-rank flex items-center justify-center font-bold rounded-full bg-amber-600 text-white shadow-sm flex-shrink-0">3</span>`;
 
         const card = document.createElement('div');
-        card.className = `score-card bg-white rounded-lg p-3 border shadow-sm flex items-center justify-between transition ${
+        card.className = `score-card bg-white rounded-md border shadow-sm flex items-center justify-between transition ${
           team.isStudent ? 'border-teal-400 bg-teal-50/40' : 'border-slate-200'
         }`;
 
         card.innerHTML = `
-          <div class="flex items-center space-x-3 overflow-hidden pr-2">
+          <div class="flex items-center space-x-2 overflow-hidden pr-2 min-w-0 flex-grow">
             ${rankBadge}
-            <span class="text-xs font-mono font-bold text-slate-400">#${team.table}</span>
-            <span class="font-bold text-sm text-slate-800 truncate">${team.name}</span>
-            ${team.isStudent ? '<span class="text-teal-600 text-xs" title="Leerlingenploeg">🎓</span>' : ''}
+            <span class="card-table font-mono font-bold text-slate-400 flex-shrink-0">#${team.table}</span>
+            <div class="team-name-wrapper overflow-hidden whitespace-nowrap min-w-0 flex-grow">
+              <span class="card-name font-extrabold text-slate-800 inline-block team-name-span">${team.name}</span>
+            </div>
+            ${team.isStudent ? '<span class="text-teal-600 text-xs flex-shrink-0" title="Leerlingenploeg">🎓</span>' : ''}
           </div>
-          <div class="text-right flex-shrink-0">
-            <span class="text-lg font-black tracking-tight text-teal-800">${team.totalScore}</span>
-            <span class="text-[10px] text-slate-400 font-medium">pt</span>
+          <div class="text-right flex-shrink-0 pl-1">
+            <span class="card-score font-black tracking-tight text-teal-800">${team.totalScore}</span>
+            <span class="text-[9px] text-slate-400 font-medium">pt</span>
           </div>
         `;
         container.appendChild(card);
       });
+
+      autoFitTeamNames();
     }
+
+    // Automatische tekstschaling voor lange teamnamen
+    function autoFitTeamNames() {
+      const wrappers = document.querySelectorAll('.team-name-wrapper');
+      wrappers.forEach(wrapper => {
+        const span = wrapper.querySelector('.team-name-span');
+        if (!span) return;
+        
+        span.style.fontSize = ''; // Reset
+        let currentScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--board-text-scale')) || 1;
+        let fontSize = 0.95 * currentScale; // Standaard grootte in rem
+        
+        while (span.scrollWidth > wrapper.clientWidth && fontSize > 0.6) {
+          fontSize -= 0.04;
+          span.style.fontSize = fontSize + 'rem';
+        }
+      });
+    }
+
+    window.addEventListener('resize', autoFitTeamNames);
 
     function renderScoreInputs() {
       const quiz = getActiveQuiz();
