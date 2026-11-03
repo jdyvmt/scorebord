@@ -35,6 +35,12 @@
       max-width: 100% !important;
       padding: 1.5rem !important;
     }
+    body.is-clean-fullscreen #fullscreen-btn-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 50;
+    }
   </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
@@ -64,10 +70,10 @@
       <!-- FRONT-END: LIVE SCOREBORD -->
       <section id="tab-front" class="space-y-6 relative">
         
-        <!-- Knop voor Clean Fullscreen ZONDER navigatie/filters -->
-        <div class="flex justify-end">
-          <button onclick="toggleCleanFullscreen()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-2">
-            <i class="fa-solid fa-expand"></i> Volledig scherm (Clean)
+        <!-- Enkele subtiele fullscreen knop met icoon -->
+        <div id="fullscreen-btn-container" class="flex justify-end">
+          <button onclick="toggleCleanFullscreen()" id="fullscreen-toggle-btn" title="Volledig scherm in-/uitschakelen" class="bg-slate-800/80 hover:bg-slate-900 text-white text-sm p-2.5 rounded-lg shadow backdrop-blur-sm transition flex items-center justify-center w-9 h-9">
+            <i id="fullscreen-icon" class="fa-solid fa-expand"></i>
           </button>
         </div>
 
@@ -88,13 +94,6 @@
           <div id="scoreboard-progress-legend" class="flex items-center space-x-4 text-xs font-medium text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
             <!-- Dynamisch ingevuld -->
           </div>
-        </div>
-
-        <!-- Zwevende sluitknop tijdens Fullscreen modus -->
-        <div id="exit-fullscreen-btn" class="hidden fixed top-4 right-4 z-50">
-          <button onclick="toggleCleanFullscreen()" class="bg-slate-800/80 hover:bg-slate-900 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm transition flex items-center gap-2">
-            <i class="fa-solid fa-compress"></i> Volledig scherm verlagen
-          </button>
         </div>
 
         <!-- Container voor 3-koloms rangschikking -->
@@ -322,17 +321,11 @@
       return appState.quizzes[appState.activeQuizId] || Object.values(appState.quizzes)[0];
     }
 
-    // Toggle Clean Fullscreen Mode
+    // Toggle Clean Fullscreen Mode met dynamisch icoon
     function toggleCleanFullscreen() {
-      const body = document.body;
-      const exitBtn = document.getElementById('exit-fullscreen-btn');
-
       if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
-          body.classList.add('is-clean-fullscreen');
-          exitBtn.classList.remove('hidden');
-        }).catch(err => {
-          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        document.documentElement.requestFullscreen().catch(err => {
+          console.error(`Fout bij inschakelen volledig scherm: ${err.message}`);
         });
       } else {
         if (document.exitFullscreen) {
@@ -341,13 +334,17 @@
       }
     }
 
-    // Luisteren naar veranderingen in de schermstatus (bv. bij drukken op Esc)
+    // Luisteren naar statuswijziging van het scherm
     document.addEventListener('fullscreenchange', () => {
       const body = document.body;
-      const exitBtn = document.getElementById('exit-fullscreen-btn');
-      if (!document.fullscreenElement) {
+      const icon = document.getElementById('fullscreen-icon');
+
+      if (document.fullscreenElement) {
+        body.classList.add('is-clean-fullscreen');
+        icon.className = 'fa-solid fa-compress';
+      } else {
         body.classList.remove('is-clean-fullscreen');
-        exitBtn.classList.add('hidden');
+        icon.className = 'fa-solid fa-expand';
       }
     });
 
