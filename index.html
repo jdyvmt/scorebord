@@ -25,6 +25,16 @@
       page-break-inside: avoid;
       margin-bottom: 0.75rem;
     }
+    /* Clean mode verborgene elementen */
+    body.is-clean-fullscreen header,
+    body.is-clean-fullscreen #filter-bar,
+    body.is-clean-fullscreen footer {
+      display: none !important;
+    }
+    body.is-clean-fullscreen main {
+      max-width: 100% !important;
+      padding: 1.5rem !important;
+    }
   </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-800 min-h-screen flex flex-col justify-between">
@@ -52,10 +62,17 @@
     <main class="max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
 
       <!-- FRONT-END: LIVE SCOREBORD -->
-      <section id="tab-front" class="space-y-6">
+      <section id="tab-front" class="space-y-6 relative">
         
+        <!-- Knop voor Clean Fullscreen ZONDER navigatie/filters -->
+        <div class="flex justify-end">
+          <button onclick="toggleCleanFullscreen()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow transition flex items-center gap-2">
+            <i class="fa-solid fa-expand"></i> Volledig scherm (Clean)
+          </button>
+        </div>
+
         <!-- Filterbalk & Voortgangslegende -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
+        <div id="filter-bar" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
           <div class="flex items-center space-x-2">
             <span class="text-sm font-semibold text-slate-600">Klassement:</span>
             <div class="inline-flex rounded-lg border border-slate-200 p-1 bg-slate-50">
@@ -71,6 +88,13 @@
           <div id="scoreboard-progress-legend" class="flex items-center space-x-4 text-xs font-medium text-slate-600 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200">
             <!-- Dynamisch ingevuld -->
           </div>
+        </div>
+
+        <!-- Zwevende sluitknop tijdens Fullscreen modus -->
+        <div id="exit-fullscreen-btn" class="hidden fixed top-4 right-4 z-50">
+          <button onclick="toggleCleanFullscreen()" class="bg-slate-800/80 hover:bg-slate-900 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg backdrop-blur-sm transition flex items-center gap-2">
+            <i class="fa-solid fa-compress"></i> Volledig scherm verlagen
+          </button>
         </div>
 
         <!-- Container voor 3-koloms rangschikking -->
@@ -227,7 +251,7 @@
     </main>
   </div>
 
-  <!-- Uiterst subtiel, tekstloos verbindingsindicatortje (rechtsonder in de hoek) -->
+  <!-- Uiterst subtiel, tekstloos verbindingsindicatortje -->
   <footer class="max-w-7xl mx-auto w-full p-4 flex justify-end">
     <div title="Verbonden" class="w-2 h-2 rounded-full bg-emerald-500 opacity-60"></div>
   </footer>
@@ -298,6 +322,35 @@
       return appState.quizzes[appState.activeQuizId] || Object.values(appState.quizzes)[0];
     }
 
+    // Toggle Clean Fullscreen Mode
+    function toggleCleanFullscreen() {
+      const body = document.body;
+      const exitBtn = document.getElementById('exit-fullscreen-btn');
+
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          body.classList.add('is-clean-fullscreen');
+          exitBtn.classList.remove('hidden');
+        }).catch(err => {
+          console.error(`Error attempting to enable fullscreen: ${err.message}`);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Luisteren naar veranderingen in de schermstatus (bv. bij drukken op Esc)
+    document.addEventListener('fullscreenchange', () => {
+      const body = document.body;
+      const exitBtn = document.getElementById('exit-fullscreen-btn');
+      if (!document.fullscreenElement) {
+        body.classList.remove('is-clean-fullscreen');
+        exitBtn.classList.add('hidden');
+      }
+    });
+
     function switchTab(tab) {
       document.getElementById('tab-front').classList.toggle('hidden', tab !== 'front');
       document.getElementById('tab-back').classList.toggle('hidden', tab !== 'back');
@@ -353,7 +406,6 @@
       const legendContainer = document.getElementById('scoreboard-progress-legend');
       container.innerHTML = '';
 
-      // Bereken hoeveel rondes al punten hebben (waar minstens één ploeg een score heeft ingevuld) en de maxscore tot dan toe
       let roundsWithScoresCount = 0;
       let maxScoreSoFar = 0;
 
@@ -452,10 +504,12 @@
           <td class="p-3 text-center">
             <input type="number" 
                    step="0.5"
+                   max="${round.maxScore}"
                    data-index="${index}"
                    class="score-field w-20 text-center bg-slate-50 border border-slate-300 rounded-lg p-1.5 text-sm font-bold text-slate-900 focus:ring-2 focus:ring-teal-500"
                    value="${score}"
-                   onchange="updateScore('${team.id}', '${round.id}', this.value)"
+                   oninput="validateScoreInput(this, ${round.maxScore})"
+                   onchange="updateScore('${team.id}', '${round.id}', this.value, ${round.maxScore})"
                    onkeydown="handleScoreKey(event, ${index})">
           </td>
         `;
@@ -463,19 +517,33 @@
       });
     }
 
+    function validateScoreInput(input, maxScore) {
+      if (input.value !== '' && parseFloat(input.value) > maxScore) {
+        input.classList.add('border-red-500', 'bg-red-50');
+      } else {
+        input.classList.remove('border-red-500', 'bg-red-50');
+      }
+    }
+
     function handleScoreKey(e, index) {
       if (e.key === 'Enter' || e.key === 'ArrowDown') {
         e.preventDefault();
         const nextInput = document.querySelector(`.score-field[data-index="${index + 1}"]`);
-        if (nextInput) nextInput.focus();
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+        }
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         const prevInput = document.querySelector(`.score-field[data-index="${index - 1}"]`);
-        if (prevInput) prevInput.focus();
+        if (prevInput) {
+          prevInput.focus();
+          prevInput.select();
+        }
       }
     }
 
-    function updateScore(teamId, roundId, scoreVal) {
+    function updateScore(teamId, roundId, scoreVal, maxScore) {
       const quiz = getActiveQuiz();
       const team = quiz.teams.find(t => t.id === teamId);
       if (team) {
@@ -483,7 +551,12 @@
         if (scoreVal === '') {
           delete team.scores[roundId];
         } else {
-          team.scores[roundId] = parseFloat(scoreVal);
+          let numVal = parseFloat(scoreVal);
+          if (numVal > maxScore) {
+            alert(`Let op: De maximale score voor deze ronde is ${maxScore}. De score is aangepast.`);
+            numVal = maxScore;
+          }
+          team.scores[roundId] = numVal;
         }
         saveState();
       }
